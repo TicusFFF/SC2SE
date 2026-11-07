@@ -1,0 +1,86 @@
+_base_: ../_base_/default.yaml
+
+model:
+  # S5-3_maxToken0:
+  # 0 = use the provider/client default for known-short control outputs too.
+  short_max_tokens: 0
+
+  # 0 = do not pass max_tokens / max_completion_tokens / max_output_tokens;
+  # use provider/client default, same style as S3.
+  default_max_tokens: 0
+
+  # Contrastive-soft judge output cap.
+  # 0 = provider/client default, aligned with S5-3 maxToken0 style.
+  contrastive_soft_max_tokens: 0
+
+  # Legacy alias used by rewrite_from_suggestions.
+  # Keep it aligned with default_max_tokens for S5-3.
+  rewrite_max_completion_tokens: 0
+
+train:
+  train_size: 0
+
+  # Number of train samples rolled out per SkillOpt optimization step.
+  # 0 = full train split.
+  rollout_size: 0
+
+  accumulation: 1
+
+env:
+  name: forward_math
+  use_initial_skill: false
+  skill_init: ""
+  dataset_path: ""
+  data_path: ""
+  rollout_system_path: skillopt/envs/forward_math/prompts/rollout_system.md
+  out_root: ""
+
+  # S5 bootstrap: use the pre-generated shared initial response for the
+  # first training rollout. A0 is still used for candidate skills and
+  # all later skill-conditioned rollouts.
+  bootstrap_shared_initial_response: true
+
+  # Fail early if SkillOpt optimizer is not configured.
+  optimizer_probe: true
+
+  # S5-2: Forward rollout sample-level parallelism.
+  # Keep 1 as the safe default; override with env.rollout_workers=4/8/16.
+  rollout_workers: 1
+
+optimizer:
+  skill_update_mode: patch
+  learning_rate: 4
+  min_learning_rate: 1
+  lr_control_mode: fixed
+  use_slow_update: false
+  use_meta_skill: false
+
+evaluation:
+  # P1-1 loose evaluates every valid whole candidate and tracks the best
+  # snapshot, without rejecting score regressions or running fallback rescue.
+  # P1-1 strict tries the whole candidate first and rescues atomic edits
+  # only when the complete candidate fails the gate.
+  use_gate: false
+
+  # S5 evaluates an independent initial-solver answer.
+  # forward_pass_rate: stop at its first complete Forward PASS/FAIL.
+  # real_acc: use the existing shared gold-answer judge.
+  strict_validation_metric: forward_pass_rate
+  gate_metric: hard
+  gate_mixed_weight: 0.5
+
+  # Role checks remain mandatory before and after Aggregate.
+  compound_screening_format_max_attempts: 3
+
+  eval_test: false
+  eval_final_skill: false
+
+  use_contrastive_soft: false
+  contrastive_soft_workers: 4
+  contrastive_soft_sample_limit: 0
+  contrastive_soft_fail_fast: false
+
+compression:
+  enabled: true
+  trace_enabled: true
+  trigger_tokens: 131072
