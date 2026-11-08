@@ -1,58 +1,58 @@
-# SC2SE：从自纠错到自进化
+# From Self-Correction to Self-Evolution: Agentic Test-Time Learning for Mathematical Reasoning
 
-**From Self-Correction to Self-Evolution: Agentic Test-Time Learning for Mathematical Reasoning**
+English | [简体中文](README_zh-CN.md)
 
-SC2SE 把数学解题中的纠错经验整理成可复用的技能，供模型下一轮作答时使用。模型在测试时更新技能库，模型参数保持冻结，标准答案仅用于评分。
+SC2SE turns correction experience from mathematical problem solving into reusable skills for the model's next round of answering. The skill library is updated at test time while model parameters remain frozen. Reference answers are used only for evaluation.
 
-## 方法框架
+## Framework
 
-[![SC2SE 的纠错、技能更新和技能应用三个阶段](assets/framework.png)](assets/framework.png)
+[![SC2SE's three stages: correction, skill updating, and skill application](assets/framework.png)](assets/framework.png)
 
-求解智能体先作答，逐步纠错智能体检查解题过程，并根据发现的问题修正回答。技能进化智能体从这些记录中提炼解题方法，与已有技能合并。角色校准智能体在合并前后检查每条技能，确保它给出的是解题时可执行的建议。求解智能体带着更新后的技能重新作答，新一轮的验证和纠错又为技能更新提供经验。
+The solver agent first generates a response. The stepwise correction agent checks the solution process and revises the response based on the issues it finds. The skill evolution agent distills problem-solving methods from these records and merges them with existing skills. The role calibration agent checks each skill before and after merging to ensure it provides actionable advice for solving problems. The solver agent answers again using the updated skills, and the next round of verification and correction provides further experience for skill updating.
 
-## 主要结果
+## Main Results
 
-[![论文表 1：四个模型在五个数学题集上的准确率。末两行分别为使用技能的初答和进一步纠错后的回答。](assets/main-results.png)](assets/main-results.png)
+[![Table 1 from the paper: Accuracy of four models on five mathematical reasoning datasets. The last two rows show initial responses generated with skills and responses after further correction.](assets/main-results.png)](assets/main-results.png)
 
-表中 Base 是各方法共用的初答。SC2SE 从空技能库开始，在同一批题目上更新四轮；最后固定技能库，分别评价使用技能重新生成的初答（SC2SE<sub>init</sub>）和进一步纠错后的回答（SC2SE<sub>corr</sub>）。
+In the table, Base denotes the initial responses shared by the methods. SC2SE starts with an empty skill library and updates it over four rounds on the same batch of problems. The final skill library is then fixed, and initial responses newly generated with skills (SC2SE<sub>init</sub>) and responses after further correction (SC2SE<sub>corr</sub>) are evaluated separately.
 
-## 安装与环境配置
+## Installation and Configuration
 
-在仓库根目录执行：
+Run the following command from the repository root:
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-示例调用 DeepSeek 官方 API。请设置 `DEEPSEEK_API_KEY`。PowerShell 使用 `$env:DEEPSEEK_API_KEY = "<your-key>"`，Bash 使用 `export DEEPSEEK_API_KEY="<your-key>"`。
+The example uses the official DeepSeek API. Set `DEEPSEEK_API_KEY`. In PowerShell, use `$env:DEEPSEEK_API_KEY = "<your-key>"`; in Bash, use `export DEEPSEEK_API_KEY="<your-key>"`.
 
-## 快速开始
+## Quick Start
 
-仓库附带的 `demo` 包含两道数学题。执行下面两步会调用模型。
+The included `demo` contains two mathematics problems. The following two steps call the model API.
 
-### 1. 生成公共初答
+### 1. Generate Shared Initial Responses
 
 ```bash
 python 0-1_initial_response/generate_initial_responses.py --dataset demo --output-dir runs/initial
 ```
 
-初答保存在本地 `runs/initial/deepseek-flash_demo_first_response.jsonl`，评分保存在同目录的 `demo.initial-eval.json`。比较不同方法时可共用这批初答，在第 2 步用 `--initial-dir` 指向保存初答和版本记录的目录。
+Initial responses are saved locally to `runs/initial/deepseek-flash_demo_first_response.jsonl`, and their scores are saved to `demo.initial-eval.json` in the same directory. When comparing methods, you can share this batch of initial responses. In step 2, set `--initial-dir` to the directory containing the initial responses and model version records.
 
-### 2. 运行 SC2SE 并评分
+### 2. Run SC2SE and Evaluate
 
 ```bash
 python 0-3_all_model_test/run_plan_S_SC/S_SC_S5-8-0_initialSolverSkill+strictACC+skillOptP1-1+compress/run_sc2se.py --dataset demo --initial-dir runs/initial --run
 ```
 
-程序从公共初答开始验证与纠错，完成四轮技能更新后，用固定的技能库重新作答。结果默认写入 `runs/<UTC时间戳>/`。其中 `demo/final_skill_evaluation/results.jsonl` 保存使用技能的初答和纠错后的回答。两类回答均用同一评分程序评价，结果分别保存在 `evaluation_initial.json` 和 `evaluation_corrected.json`。Python 工具会在本机执行模型生成的代码，请使用专用、低权限的环境。
+The program begins verification and correction from the shared initial responses. After four rounds of skill updating, it answers again using the fixed skill library. By default, results are saved to `runs/<UTC-timestamp>/`. The file `demo/final_skill_evaluation/results.jsonl` contains initial responses generated with skills and responses after correction. Both response types use the same evaluator, with results saved to `evaluation_initial.json` and `evaluation_corrected.json`, respectively. The Python tool executes model-generated code on your machine, so use a dedicated environment with restricted permissions.
 
-要改跑 HMMT，请先按 `0-0_datasets/README.md` 准备题集，再将两步命令中的 `--dataset demo` 换成 `--dataset hmmt_feb_2025`。
+To run HMMT, first prepare the dataset as described in `0-0_datasets/README.md`, then replace `--dataset demo` with `--dataset hmmt_feb_2025` in both commands.
 
-部分验证与纠错代码改编自 ProgCo，技能更新代码参考了 SkillOpt，详见[来源说明](THIRD_PARTY.md)。
+Parts of the verification and correction code are adapted from ProgCo, and the skill-update code draws on SkillOpt. See [attribution](THIRD_PARTY.md).
 
-## 引用
+## Citation
 
-arXiv 链接待补。
+arXiv link to be added.
 
 ```bibtex
 @misc{zou2026sc2se,
