@@ -25,11 +25,11 @@ SC2SE 把数学解题中的纠错经验整理成可复用的技能，供模型�
 python -m pip install -r requirements.txt
 ```
 
-示例调用 [DeepSeek 官方 API](https://api-docs.deepseek.com/)。请设置 [`DEEPSEEK_API_KEY`](.env.example)。PowerShell 使用 `$env:DEEPSEEK_API_KEY = "<your-key>"`，Bash 使用 `export DEEPSEEK_API_KEY="<your-key>"`。
+示例调用 DeepSeek 官方 API。请设置 `DEEPSEEK_API_KEY`。PowerShell 使用 `$env:DEEPSEEK_API_KEY = "<your-key>"`，Bash 使用 `export DEEPSEEK_API_KEY="<your-key>"`。
 
 ## 快速开始
 
-仓库附带的 [`demo`](0-0_datasets/hard_test_raw/demo/test_top2_filt2.json) 包含两道数学题。执行下面两步会调用模型。
+仓库附带的 `demo` 包含两道数学题。执行下面两步会调用模型。
 
 ### 1. 生成公共初答
 
@@ -47,10 +47,10 @@ python 0-3_all_model_test/run_plan_S_SC/S_SC_S5-8-0_initialSolverSkill+strictACC
 
 程序从公共初答开始验证与纠错，完成四轮技能更新后，用固定的技能库重新作答。结果默认写入 `runs/<UTC时间戳>/`。其中 `demo/final_skill_evaluation/results.jsonl` 保存使用技能的初答和纠错后的回答。两类回答均用同一评分程序评价，结果分别保存在 `evaluation_initial.json` 和 `evaluation_corrected.json`。Python 工具会在本机执行模型生成的代码，请使用专用、低权限的环境。
 
-要改跑 HMMT，请先按[数据说明](0-0_datasets/README.md)准备题集，再将两步命令中的 `--dataset demo` 换成 `--dataset hmmt_feb_2025`。
+要改跑 HMMT，请先按 `0-0_datasets/README.md` 准备题集，再将两步命令中的 `--dataset demo` 换成 `--dataset hmmt_feb_2025`。
 
 ## 引用
 
 Rui Zou, Yutao Zhu, Mengqi Wei, and Ji-Rong Wen. *From Self-Correction to Self-Evolution: Agentic Test-Time Learning for Mathematical Reasoning.*
 
-[第三方代码、数据和许可证](THIRD_PARTY.md)
+[第三方来源](THIRD_PARTY.md)
