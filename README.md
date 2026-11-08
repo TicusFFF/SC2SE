@@ -1,7 +1,6 @@
 # SC2SE：从自纠错到自进化
 
-**From Self-Correction to Self-Evolution: Agentic Test-Time Learning for Mathematical Reasoning**  
-Rui Zou · Yutao Zhu · Mengqi Wei · Ji-Rong Wen
+**From Self-Correction to Self-Evolution: Agentic Test-Time Learning for Mathematical Reasoning**
 
 SC2SE 把数学解题中的纠错经验整理成可复用的技能，供模型下一轮作答时使用。模型在测试时更新技能库，模型参数保持冻结，标准答案仅用于评分。
 
@@ -49,8 +48,16 @@ python 0-3_all_model_test/run_plan_S_SC/S_SC_S5-8-0_initialSolverSkill+strictACC
 
 要改跑 HMMT，请先按 `0-0_datasets/README.md` 准备题集，再将两步命令中的 `--dataset demo` 换成 `--dataset hmmt_feb_2025`。
 
+部分验证与纠错代码改编自 ProgCo，技能更新代码参考了 SkillOpt，详见[来源说明](THIRD_PARTY.md)。
+
 ## 引用
 
-Rui Zou, Yutao Zhu, Mengqi Wei, and Ji-Rong Wen. *From Self-Correction to Self-Evolution: Agentic Test-Time Learning for Mathematical Reasoning.*
+arXiv 链接待补。
 
-[第三方来源](THIRD_PARTY.md)
+```bibtex
+@misc{zou2026sc2se,
+  title = {From Self-Correction to Self-Evolution: Agentic Test-Time Learning for Mathematical Reasoning},
+  author = {Zou, Rui and Zhu, Yutao and Wei, Mengqi and Wen, Ji-Rong},
+  year = {2026}
+}
+```
