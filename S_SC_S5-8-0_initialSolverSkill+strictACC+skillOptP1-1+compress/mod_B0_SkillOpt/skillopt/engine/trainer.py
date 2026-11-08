@@ -938,41 +938,35 @@ class ReflACTTrainer:
         if not self.cfg.get("optimizer_probe", False):
             return
 
-        try:
-            response, _ = chat_optimizer(
-                system=(
-                    "Return one JSON object only. "
-                    "Do not use markdown. "
-                    "Do not explain. "
-                    'The object must be exactly {"status":"ok"}.'
-                ),
-                user='{"status":"ok"}',
-                max_completion_tokens=_resolve_max_tokens(self.cfg, "short_max_tokens", 0),
-                retries=4,
-                stage="optimizer_probe",
-            )
+        for prompt in ('{"status":"ok"}', 'Reply on one line with the JSON key "status" and value "ok".'):
+            try:
+                response, _ = chat_optimizer(
+                    system=(
+                        "Return one JSON object only. "
+                        "Do not use markdown. "
+                        "Do not explain. "
+                        'The object must be exactly {"status":"ok"}.'
+                    ),
+                    user=prompt,
+                    max_completion_tokens=_resolve_max_tokens(self.cfg, "short_max_tokens", 0),
+                    retries=4,
+                    stage="optimizer_probe",
+                )
+            except Exception as error:
+                raise RuntimeError(
+                    "SkillOpt optimizer probe failed before rollout. "
+                    "Check optimizer backend, endpoint, deployment name, "
+                    "API key, and auth mode."
+                ) from error
+            text = str(response).strip()
+            if extract_json(text) == {"status": "ok"}:
+                return
 
-        except Exception as error:
-            raise RuntimeError(
-                "SkillOpt optimizer probe failed before rollout. "
-                "Check optimizer backend, endpoint, deployment name, "
-                "API key, and auth mode."
-            ) from error
-
-        text = str(
-            response
-        ).strip()
-
-        payload = extract_json(
-            text
+        raise RuntimeError(
+            "SkillOpt optimizer probe returned an unexpected response. "
+            "Expected JSON object exactly {'status': 'ok'}, "
+            f"got: {text!r}"
         )
-
-        if payload != {"status": "ok"}:
-            raise RuntimeError(
-                "SkillOpt optimizer probe returned an unexpected response. "
-                "Expected JSON object exactly {'status': 'ok'}, "
-                f"got: {text!r}"
-            )
 
     def train(self) -> dict:
         """Execute the full ReflACT training loop. Returns summary dict."""

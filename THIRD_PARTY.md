@@ -6,4 +6,4 @@ The stepwise correction module includes verification and revision code and a Pyt
 
 The Flash configuration uses DeepSeek tokenizer resources to count tokens for context compression. Their [source](0-4_API/2_model_capacity/tokenizers/deepseek_v41/SOURCE.md) and [license](0-4_API/2_model_capacity/tokenizers/deepseek_v41/LICENSE) accompany the tokenizer.
 
-The [dataset documentation](0-0_datasets/README.md) lists the sources, licenses, and local preparation instructions for the benchmarks. Third-party code, model resources, and data retain their respective licenses.
+The [dataset documentation](0-0_datasets/README.md) lists the sources and terms for preparing the paper benchmarks locally.

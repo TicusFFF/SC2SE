@@ -17,6 +17,27 @@ import sc2se_runner
 
 
 class ReleaseEntryTest(unittest.TestCase):
+    def test_optimizer_probe_retries_a_malformed_reply(self):
+        module_path = str(sc2se_runner.METHOD / "mod_B0_SkillOpt")
+        with patch.object(sys, "path", [module_path, str(sc2se_runner.METHOD), *sys.path]):
+            from skillopt.engine import trainer
+
+        probe = trainer.ReflACTTrainer({"optimizer_probe": True}, None)._probe_optimizer
+        good = ('{"status":"ok"}', {})
+        malformed = ('{"status\n":"ok"}', {})
+        with patch.object(trainer, "chat_optimizer", side_effect=[good]) as chat:
+            probe()
+            chat.assert_called_once()
+        with patch.object(trainer, "chat_optimizer", side_effect=[malformed, good]) as chat:
+            probe()
+            first, retry = chat.call_args_list
+            self.assertEqual(first.kwargs["user"], '{"status":"ok"}')
+            self.assertNotEqual(first.kwargs["user"], retry.kwargs["user"])
+        with patch.object(trainer, "chat_optimizer", side_effect=[malformed, malformed]) as chat:
+            with self.assertRaisesRegex(RuntimeError, "unexpected response"):
+                probe()
+            self.assertEqual(chat.call_count, 2)
+
     def test_native_training_receives_only_blind_inputs(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
@@ -57,8 +78,12 @@ class ReleaseEntryTest(unittest.TestCase):
             with self.subTest(dataset=dataset), tempfile.TemporaryDirectory() as work:
                 base = Path(work)
                 out = base / "run"
-                data = json.loads((entry.DATA_ROOT / entry.DATASETS[dataset]["file"]).read_text(encoding="utf-8"))
-                row = data[0]
+                data_root = entry.DATA_ROOT if dataset == "demo" else base / "datasets"
+                questions = data_root / entry.DATASETS[dataset]["file"]
+                if dataset != "demo":
+                    questions.parent.mkdir(parents=True)
+                    questions.write_text(json.dumps([{"q": "What is six times seven?", "answer": "42"}]), encoding="utf-8")
+                row = json.loads(questions.read_text(encoding="utf-8"))[0]
                 query = row["q"]
                 sample_id = f"{dataset}_0"
                 fixture = {"id": sample_id, "query": query, "response": "fixture", "pred": "",
@@ -91,7 +116,7 @@ class ReleaseEntryTest(unittest.TestCase):
                 argv = [str(ENTRY), "--dataset", dataset, "--limit", "1", "--initial-dir", str(base),
                         "--output", str(out), "--run"]
                 env = {"DEEPSEEK_API_KEY": "offline", "HTTPS_PROXY": "http://127.0.0.1:1", "NO_PROXY": ""}
-                with patch.dict(os.environ, env), patch.object(sys, "argv", argv):
+                with patch.dict(os.environ, env), patch.object(sys, "argv", argv), patch.object(entry, "DATA_ROOT", data_root):
                     with patch.object(sc2se_runner, "run_dataset", side_effect=verifier_fixture) as run:
                         entry.main()
                         run.assert_called_once()
@@ -103,7 +128,7 @@ class ReleaseEntryTest(unittest.TestCase):
                 state["contract"]["model"] = "different-model"
                 provenance.write_text(json.dumps(state), encoding="utf-8")
                 with self.assertRaisesRegex(ValueError, "expected initial answers from official DeepSeek Flash"):
-                    entry.checked_inputs(dataset, entry.DATA_ROOT / entry.DATASETS[dataset]["file"],
+                    entry.checked_inputs(dataset, questions,
                                          base / f"deepseek-flash_{dataset}_first_response.jsonl", 1)
 
 

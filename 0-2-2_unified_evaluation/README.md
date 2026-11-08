@@ -1,18 +1,26 @@
-# Final-answer evaluation
+# Answer evaluation
 
-This directory contains the shared V5 answer extractor and V2 equivalence judge. The extractor receives the question and the selected final response. The judge compares the extracted answer with the reference. Both stages retain the original prompts, rules and retry limits.
+SC2SE scores two responses per question using the same V5 answer extractor and V2 equivalence judge. The extractor reads the question and the response. The judge compares the extracted answer with the reference.
 
-Run the following commands from the repository root. The first command builds an evaluation input from native SC2SE output. Repeat `--dataset KEY DATASET_JSON NATIVE_OUTPUT_JSON` to combine several datasets. The generated records determine the subset. Their IDs and questions must agree with the original dataset, even when evaluating a single question.
+The experiment runner prepares both inputs and scores them automatically. A demo run writes the following files inside its output directory.
+
+| Response from the final skill library | Saved responses | Scorer input | Score report |
+|---|---|---|---|
+| Initial answer using the frozen skills | `demo/responses_initial.json` | `evaluation_input_initial.json` | `evaluation_initial.json` |
+| Answer after correction | `demo/responses_corrected.json` | `evaluation_input_corrected.json` | `evaluation_corrected.json` |
+
+To check the saved inputs locally, run the commands below from the repository root. Replace `runs/demo-run` with the output directory printed by the runner.
 
 ```console
-python 0-2-2_unified_evaluation/prepare_inputs.py --dataset demo 0-0_datasets/hard_test_raw/demo/test_top2_filt2.json path/to/model_outputs/demo.json --output run/eval_input.json
-python 0-2-2_unified_evaluation/evaluate.py --input_json run/eval_input.json
+python 0-2-2_unified_evaluation/evaluate.py --input_json runs/demo-run/evaluation_input_initial.json
+python 0-2-2_unified_evaluation/evaluate.py --input_json runs/demo-run/evaluation_input_corrected.json
 ```
 
-The second command checks the input and makes no network requests. To score the responses, set `DEEPSEEK_API_KEY` for the official DeepSeek endpoint and provide a new result path and a run-specific cache directory. Extraction and judging use `deepseek-flash` with thinking disabled and temperature zero when a model call is needed. This model identifier is a service alias.
+For a manual evaluation, the example below rebuilds the input from the corrected answers and runs the scorer. Use `responses_initial.json` and change the output and cache names from `corrected` to `initial` to evaluate the skill-guided initial answers. Repeat `--dataset KEY DATASET_JSON RESPONSES_JSON` to combine datasets at the same stage. The preparer checks each question's ID and text against the selected dataset. Set `DEEPSEEK_API_KEY` for the official DeepSeek endpoint. Extraction and judging use `deepseek-flash` with thinking disabled and temperature zero when a model call is needed.
 
 ```console
-python 0-2-2_unified_evaluation/evaluate.py --input_json run/eval_input.json --output_json run/eval_result.json --cache_dir run/eval_cache --run
+python 0-2-2_unified_evaluation/prepare_inputs.py --dataset demo 0-0_datasets/hard_test_raw/demo/test_top2_filt2.json runs/demo-run/demo/responses_corrected.json --output runs/demo-run/recheck_input_corrected.json
+python 0-2-2_unified_evaluation/evaluate.py --input_json runs/demo-run/recheck_input_corrected.json --output_json runs/demo-run/recheck_corrected.json --cache_dir runs/demo-run/recheck_cache_corrected --run
 ```
 
 `acc` is the percentage of correct responses among all expected IDs. An empty answer counts as incorrect. If any score is pending, the report gives its ID and leaves `acc` unset. A resumed run can reuse its checkpoint with `--resume` and a new result path. Use `--retry_pending` with `--resume` to retry recorded transient failures.
